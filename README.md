@@ -8,8 +8,23 @@ Real-time DeFi pool monitoring with block-level precision.
 # 1. Install
 npm install
 
-# 2. Add RPC URL (get free from alchemy.com)
-echo 'RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY' > .env
+# 2. Configure environment
+cat > .env << EOF
+# RPC Configuration (get free from alchemy.com)
+RPC_URL=https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY
+
+# x402 Payment Configuration  
+FACILITATOR_URL=https://facilitator.daydreams.systems
+ADDRESS=<your_address>
+
+# Server Config
+PORT=3000
+HOST=0.0.0.0
+
+# Optional: Default network
+DEFAULT_NETWORK=base
+EOF
+
 
 # 3. Run
 npm run dev
