@@ -11,6 +11,14 @@ const { app, addEntrypoint } = createAgentApp({
   name: "yield-pool-watcher",
   version: "0.1.0",
   description: "Track APY and TVL across pools and alert on changes",
+}, {
+  payments: {
+    defaultPrice: "1000", // 1000 base units per call
+    facilitatorUrl: process.env.FACILITATOR_URL,
+    address: process.env.PAYMENT_ADDRESS,
+    network: process.env.NETWORK || "base-sepolia"
+  },
+  useConfigPayments: true
 });
 
 // Environment validation
@@ -386,6 +394,7 @@ function storeMetrics(metrics: PoolMetric[], maxHistory: number = 100): void {
 addEntrypoint({
   key: "monitor",
   description: "Monitor pool metrics and emit alerts on spikes or drains",
+  price: "2500", // Premium pricing for real-time monitoring
   input: z.object({
     protocol_ids: z.array(z.enum(["aave_v3", "compound_v3"])).describe("DeFi protocols to monitor"),
     pools: z.array(z.string()).describe("Pool addresses to watch (Ethereum addresses)"),
@@ -470,8 +479,9 @@ addEntrypoint({
 
 // Get history endpoint
 addEntrypoint({
-  key: "get_history",
+  key: "get_history", 
   description: "Get historical metrics for a specific pool",
+  price: "500", // Lower cost for historical data
   input: z.object({
     pool_id: z.string().describe("Pool identifier to get history for"),
     limit: z.number().optional().default(10).describe("Number of historical entries to return"),
@@ -503,7 +513,8 @@ addEntrypoint({
 // Health check endpoint
 addEntrypoint({
   key: "echo",
-  description: "Echo a message and provide system status",  
+  description: "Echo a message and provide system status",
+  // No price = free endpoint for health checks  
   input: z.object({ 
     text: z.string().describe("Text to echo back") 
   }) as any,
