@@ -19,7 +19,7 @@ export const { app, addEntrypoint } = createAgentApp({
   useConfigPayments: true
 });
 
-// Create detailed schemas for documentation
+// Create detailed schemas for documentation and x402scan compatibility
 const monitorSchema = z.object({
   network: z.string().optional().default("ethereum").describe("Blockchain network to monitor (ethereum, base, polygon, arbitrum, optimism, avalanche, bnb, solana)"),
   protocol_ids: z.array(z.enum(["aave_v3", "compound_v3"])).describe("DeFi protocols to monitor"),
@@ -30,16 +30,16 @@ const monitorSchema = z.object({
     tvl_drain_percent: z.number().optional().describe("Alert if TVL decreases by this percentage"),
     tvl_surge_percent: z.number().optional().describe("Alert if TVL increases by this percentage"),
   }).describe("Alert threshold configuration"),
-});
+}).describe("Monitor DeFi pool metrics across networks");
 
 const historySchema = z.object({
   pool_id: z.string().describe("Pool identifier (format: protocol:network:address)"),
   limit: z.number().optional().default(10).describe("Number of historical entries to return (1-100)"),
-});
+}).describe("Get historical pool data");
 
 const echoSchema = z.object({
   text: z.string().describe("Text to echo back")
-});
+}).describe("Health check with system status");
 
 addEntrypoint({
   key: "monitor",
@@ -62,6 +62,73 @@ addEntrypoint({
   description: "Health check endpoint that echoes input text and provides system status including RPC connectivity, current block number, monitored pools count, and server uptime.",
   input: echoSchema as any,
   handler: handleEcho
+});
+
+// Add x402scan-compatible endpoint for get_history with proper schema
+app.post('/x402/get_history', async (c) => {
+  // Check for x402 payment header
+  const paymentHeader = c.req.header('X-PAYMENT');
+  
+  if (!paymentHeader) {
+    // Return 402 with x402scan-compatible schema
+    return c.json({
+      x402Version: 1,
+      error: "X-PAYMENT header is required",
+      accepts: [{
+        scheme: "exact",
+        network: "base",
+        maxAmountRequired: "1000000",
+        resource: "https://yield-pool-watcher.vercel.app/x402/get_history",
+        description: "Retrieve historical APY and TVL metrics for a specific pool, with configurable limit. Useful for tracking trends and analyzing pool performance over time.",
+        mimeType: "application/json",
+        payTo: "0x7e296A887F7Bd9827D911f01D61ACe27DE542F87",
+        maxTimeoutSeconds: 300,
+        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        outputSchema: {
+          input: {
+            type: "http",
+            method: "POST",
+            bodyType: "json",
+            bodyFields: {
+              pool_id: {
+                type: "string",
+                required: true,
+                description: "Pool identifier (format: protocol:network:address)"
+              },
+              limit: {
+                type: "number",
+                required: false,
+                description: "Number of historical entries to return (1-100)"
+              }
+            }
+          }
+        },
+        extra: {
+          name: "USD Coin",
+          version: "2"
+        }
+      }],
+      payer: "0x7e296A887F7Bd9827D911f01D61ACe27DE542F87"
+    }, 402);
+  }
+  
+  // Handle paid request
+  try {
+    const body = await c.req.json();
+    const { pool_id, limit } = body;
+    
+    // Import handler
+    const { handleGetHistory } = await import("./handlers/history.js");
+    
+    // Call the handler with proper format
+    const result = await handleGetHistory({ 
+      input: { pool_id, limit } 
+    });
+    
+    return c.json(result.output);
+  } catch (error) {
+    return c.json({ error: "Internal server error" }, 500);
+  }
 });
 
 // Add schema discovery endpoints for x402scan
