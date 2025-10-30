@@ -131,6 +131,135 @@ app.post('/x402/get_history', async (c) => {
   }
 });
 
+// Add x402scan-compatible endpoint for monitor with proper schema
+app.post('/x402/monitor', async (c) => {
+  const paymentHeader = c.req.header('X-PAYMENT');
+  
+  if (!paymentHeader) {
+    return c.json({
+      x402Version: 1,
+      error: "X-PAYMENT header is required",
+      accepts: [{
+        scheme: "exact",
+        network: "base",
+        maxAmountRequired: "2000000",
+        resource: "https://yield-pool-watcher.vercel.app/x402/monitor",
+        description: "Monitor DeFi pool metrics (APY, TVL) across multiple networks with block-level precision and configurable alert thresholds. Returns real-time data, change deltas, and triggered alerts.",
+        mimeType: "application/json",
+        payTo: "0x7e296A887F7Bd9827D911f01D61ACe27DE542F87",
+        maxTimeoutSeconds: 300,
+        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        outputSchema: {
+          input: {
+            type: "http",
+            method: "POST",
+            bodyType: "json",
+            bodyFields: {
+              network: {
+                type: "string",
+                required: false,
+                description: "Blockchain network to monitor (ethereum, base, polygon, arbitrum, optimism, avalanche, bnb, solana)"
+              },
+              protocol_ids: {
+                type: "array",
+                required: true,
+                description: "DeFi protocols to monitor (aave_v3, compound_v3)"
+              },
+              pools: {
+                type: "array",
+                required: false,
+                description: "Pool addresses to watch (leave empty for default pools)"
+              },
+              threshold_rules: {
+                type: "object",
+                required: true,
+                description: "Alert threshold configuration with apy_spike_percent, apy_drop_percent, tvl_drain_percent, tvl_surge_percent"
+              }
+            }
+          }
+        },
+        extra: {
+          name: "USD Coin",
+          version: "2"
+        }
+      }],
+      payer: "0x7e296A887F7Bd9827D911f01D61ACe27DE542F87"
+    }, 402);
+  }
+  
+  try {
+    const body = await c.req.json();
+    const { network, protocol_ids, pools, threshold_rules } = body;
+    
+    const { handleMonitor } = await import("./handlers/monitor.js");
+    
+    const result = await handleMonitor({ 
+      input: { network, protocol_ids, pools, threshold_rules } 
+    });
+    
+    return c.json(result.output);
+  } catch (error) {
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
+// Add x402scan-compatible endpoint for echo with proper schema
+app.post('/x402/echo', async (c) => {
+  const paymentHeader = c.req.header('X-PAYMENT');
+  
+  if (!paymentHeader) {
+    return c.json({
+      x402Version: 1,
+      error: "X-PAYMENT header is required",
+      accepts: [{
+        scheme: "exact",
+        network: "base",
+        maxAmountRequired: "5000000",
+        resource: "https://yield-pool-watcher.vercel.app/x402/echo",
+        description: "Health check endpoint that echoes input text and provides system status including RPC connectivity, current block number, monitored pools count, and server uptime.",
+        mimeType: "application/json",
+        payTo: "0x7e296A887F7Bd9827D911f01D61ACe27DE542F87",
+        maxTimeoutSeconds: 300,
+        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        outputSchema: {
+          input: {
+            type: "http",
+            method: "POST",
+            bodyType: "json",
+            bodyFields: {
+              text: {
+                type: "string",
+                required: true,
+                description: "Text to echo back"
+              }
+            }
+          }
+        },
+        extra: {
+          name: "USD Coin",
+          version: "2"
+        }
+      }],
+      payer: "0x7e296A887F7Bd9827D911f01D61ACe27DE542F87"
+    }, 402);
+  }
+  
+  try {
+    const body = await c.req.json();
+    const { text } = body;
+    
+    const { handleEcho } = await import("./handlers/echo.js");
+    
+    const result = await handleEcho({ 
+      input: { text } 
+    });
+    
+    return c.json(result.output);
+  } catch (error) {
+    return c.json({ error: "Internal server error" }, 500);
+  }
+});
+
 // Add schema discovery endpoints for x402scan
 app.get('/schema', (c) => {
   return c.json({
