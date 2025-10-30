@@ -59,4 +59,4 @@ curl -X POST http://localhost:3000/entrypoints/monitor/invoke \
 ## Requirements
 
 - Node.js 18+
-- Ethereum RPC URL
+- Ethereum RPC URL (free from Alchemy)
