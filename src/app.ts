@@ -11,7 +11,7 @@ export const { app, addEntrypoint } = createAgentApp({
   description: "Track APY and TVL across pools and alert on changes",
 }, {
   payments: {
-    defaultPrice: "0.001",
+    defaultPrice: "5",
     facilitatorUrl: ENV.FACILITATOR_URL,
     payTo: ENV.ADDRESS || "0x742d35Cc6634C0532925a3b8D486Ee7a51d8D7B9",
     network: ENV.NETWORK
@@ -44,7 +44,7 @@ const echoSchema = z.object({
 addEntrypoint({
   key: "monitor",
   description: "Monitor DeFi pool metrics (APY, TVL) across multiple networks with block-level precision and configurable alert thresholds. Returns real-time data, change deltas, and triggered alerts.",
-  price: "0.025",
+  price: "2",
   input: monitorSchema as any,
   handler: handleMonitor
 });
@@ -52,7 +52,7 @@ addEntrypoint({
 addEntrypoint({
   key: "get_history", 
   description: "Retrieve historical APY and TVL metrics for a specific pool, with configurable limit. Useful for tracking trends and analyzing pool performance over time.",
-  price: "0.05",
+  price: "1",
   input: historySchema as any,
   handler: handleGetHistory
 });
