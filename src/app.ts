@@ -63,3 +63,206 @@ addEntrypoint({
   input: echoSchema as any,
   handler: handleEcho
 });
+
+// Add schema discovery endpoints for x402scan
+app.get('/schema', (c) => {
+  return c.json({
+    entrypoints: {
+      monitor: {
+        description: "Monitor DeFi pool metrics (APY, TVL) across multiple networks with block-level precision and configurable alert thresholds. Returns real-time data, change deltas, and triggered alerts.",
+        method: "POST",
+        endpoint: "/entrypoints/monitor/invoke",
+        price: "2",
+        input_schema: {
+          type: "object",
+          properties: {
+            input: {
+              type: "object",
+              properties: {
+                network: {
+                  type: "string",
+                  default: "ethereum",
+                  description: "Blockchain network to monitor (ethereum, base, polygon, arbitrum, optimism, avalanche, bnb, solana)"
+                },
+                protocol_ids: {
+                  type: "array",
+                  items: { enum: ["aave_v3", "compound_v3"] },
+                  description: "DeFi protocols to monitor"
+                },
+                pools: {
+                  type: "array",
+                  items: { type: "string" },
+                  default: [],
+                  description: "Pool addresses to watch (leave empty for default pools)"
+                },
+                threshold_rules: {
+                  type: "object",
+                  properties: {
+                    apy_spike_percent: { type: "number", description: "Alert if APY increases by this percentage" },
+                    apy_drop_percent: { type: "number", description: "Alert if APY decreases by this percentage" },
+                    tvl_drain_percent: { type: "number", description: "Alert if TVL decreases by this percentage" },
+                    tvl_surge_percent: { type: "number", description: "Alert if TVL increases by this percentage" }
+                  },
+                  description: "Alert threshold configuration"
+                }
+              },
+              required: ["protocol_ids", "threshold_rules"]
+            }
+          },
+          required: ["input"]
+        }
+      },
+      get_history: {
+        description: "Retrieve historical APY and TVL metrics for a specific pool, with configurable limit. Useful for tracking trends and analyzing pool performance over time.",
+        method: "POST",
+        endpoint: "/entrypoints/get_history/invoke",
+        price: "1",
+        input_schema: {
+          type: "object",
+          properties: {
+            input: {
+              type: "object",
+              properties: {
+                pool_id: {
+                  type: "string",
+                  description: "Pool identifier (format: protocol:network:address)",
+                  example: "aave_v3:base:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+                },
+                limit: {
+                  type: "number",
+                  default: 10,
+                  minimum: 1,
+                  maximum: 100,
+                  description: "Number of historical entries to return (1-100)"
+                }
+              },
+              required: ["pool_id"]
+            }
+          },
+          required: ["input"]
+        }
+      },
+      echo: {
+        description: "Health check endpoint that echoes input text and provides system status including RPC connectivity, current block number, monitored pools count, and server uptime.",
+        method: "POST",
+        endpoint: "/entrypoints/echo/invoke",
+        price: "5",
+        input_schema: {
+          type: "object",
+          properties: {
+            input: {
+              type: "object",
+              properties: {
+                text: {
+                  type: "string",
+                  description: "Text to echo back"
+                }
+              },
+              required: ["text"]
+            }
+          },
+          required: ["input"]
+        }
+      }
+    }
+  });
+});
+
+// Add OpenAPI spec for better discovery
+app.get('/openapi.json', (c) => {
+  return c.json({
+    openapi: "3.0.0",
+    info: {
+      title: "Yield Pool Watcher",
+      version: "0.1.0",
+      description: "Track APY and TVL across pools and alert on changes"
+    },
+    servers: [
+      { url: "https://yield-pool-watcher.vercel.app" }
+    ],
+    paths: {
+      "/entrypoints/monitor/invoke": {
+        post: {
+          summary: "Monitor DeFi pool metrics",
+          description: "Monitor DeFi pool metrics (APY, TVL) across multiple networks with block-level precision and configurable alert thresholds. Returns real-time data, change deltas, and triggered alerts.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    input: {
+                      type: "object",
+                      properties: {
+                        network: { type: "string", default: "ethereum", description: "Blockchain network" },
+                        protocol_ids: { type: "array", items: { enum: ["aave_v3", "compound_v3"] } },
+                        pools: { type: "array", items: { type: "string" }, default: [] },
+                        threshold_rules: { type: "object" }
+                      },
+                      required: ["protocol_ids", "threshold_rules"]
+                    }
+                  },
+                  required: ["input"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "/entrypoints/get_history/invoke": {
+        post: {
+          summary: "Get pool history",
+          description: "Retrieve historical APY and TVL metrics for a specific pool, with configurable limit. Useful for tracking trends and analyzing pool performance over time.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    input: {
+                      type: "object",
+                      properties: {
+                        pool_id: { type: "string", description: "Pool identifier (format: protocol:network:address)" },
+                        limit: { type: "number", default: 10, minimum: 1, maximum: 100 }
+                      },
+                      required: ["pool_id"]
+                    }
+                  },
+                  required: ["input"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "/entrypoints/echo/invoke": {
+        post: {
+          summary: "Echo health check",
+          description: "Health check endpoint that echoes input text and provides system status including RPC connectivity, current block number, monitored pools count, and server uptime.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    input: {
+                      type: "object",
+                      properties: {
+                        text: { type: "string", description: "Text to echo back" }
+                      },
+                      required: ["text"]
+                    }
+                  },
+                  required: ["input"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+});
