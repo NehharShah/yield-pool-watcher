@@ -189,7 +189,7 @@ app.post('/x402/monitor', async (c) => {
   
   try {
     const body = await c.req.json();
-    const { network, protocol_ids, pools, threshold_rules } = body;
+    const { network, protocol_ids, pools = [], threshold_rules } = body;
     
     const { handleMonitor } = await import("./handlers/monitor.js");
     

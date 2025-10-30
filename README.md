@@ -32,7 +32,7 @@ npm run dev
 
 Agent runs on `http://localhost:3000`
 
-## Test It
+## Test It Locally
 
 ```bash
 # Health check
@@ -40,16 +40,58 @@ curl -X POST http://localhost:3000/entrypoints/echo/invoke \
   -H "Content-Type: application/json" \
   -d '{"input":{"text":"Working!"}}'
 
-# Monitor Aave USDC
+# Monitor Base Compound V3 
 curl -X POST http://localhost:3000/entrypoints/monitor/invoke \
   -H "Content-Type: application/json" \
   -d '{
     "input": {
-      "protocol_ids": ["aave_v3"],
-      "pools": ["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],
-      "threshold_rules": {"apy_spike_percent": 10}
+      "network": "base",
+      "protocol_ids": ["compound_v3"],
+      "threshold_rules": {"apy_spike_percent": 10, "tvl_drain_percent": 15}
     }
   }'
+
+# Get historical data
+curl -X POST http://localhost:3000/entrypoints/get_history/invoke \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": {
+      "pool_id": "compound_v3:base:0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf",
+      "limit": 5
+    }
+  }'
+```
+
+## x402 Usage (Live Production)
+
+```bash
+# Production endpoint (requires x402 payment)
+curl -X POST https://yield-pool-watcher.vercel.app/x402/monitor \
+  -H "Content-Type: application/json" \
+  -H "X-PAYMENT: <payment_header>" \
+  -d '{
+    "network": "base",
+    "protocol_ids": ["compound_v3"],
+    "threshold_rules": {"apy_spike_percent": 5}
+  }'
+
+# Without payment header (returns 402 with pricing info)
+curl -X POST https://yield-pool-watcher.vercel.app/x402/monitor \
+  -H "Content-Type: application/json" \
+  -d '{"network":"base","protocol_ids":["compound_v3"],"threshold_rules":{}}'
+```
+
+## Multi-Chain Examples
+
+```bash
+# Ethereum Aave V3
+{"network": "ethereum", "protocol_ids": ["aave_v3"], "threshold_rules": {"apy_spike_percent": 10}}
+
+# Polygon Compound V3  
+{"network": "polygon", "protocol_ids": ["compound_v3"], "threshold_rules": {"tvl_drain_percent": 20}}
+
+# Base (both protocols)
+{"network": "base", "protocol_ids": ["aave_v3", "compound_v3"], "threshold_rules": {"apy_drop_percent": 5}}
 ```
 
 ## Features
