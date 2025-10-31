@@ -114,15 +114,20 @@ app.post('/x402/get_history', async (c) => {
   
   // Handle paid request
   try {
-    const body = await c.req.json();
-    const { pool_id, limit } = body;
+    let body = {};
+    try {
+      body = await c.req.json() || {};
+    } catch (e) {
+      // Handle case where no JSON body is provided
+      body = {};
+    }
     
     // Import handler
     const { handleGetHistory } = await import("./handlers/history.js");
     
-    // Call the handler with proper format
+    // Call the handler with proper format (let handler apply defaults)
     const result = await handleGetHistory({ 
-      input: { pool_id, limit } 
+      input: body 
     });
     
     return c.json(result.output);
@@ -188,13 +193,18 @@ app.post('/x402/monitor', async (c) => {
   }
   
   try {
-    const body = await c.req.json();
-    const { network, protocol_ids, pools = [], threshold_rules } = body;
+    let body = {};
+    try {
+      body = await c.req.json() || {};
+    } catch (e) {
+      // Handle case where no JSON body is provided
+      body = {};
+    }
     
     const { handleMonitor } = await import("./handlers/monitor.js");
     
     const result = await handleMonitor({ 
-      input: { network, protocol_ids, pools, threshold_rules } 
+      input: body 
     });
     
     return c.json(result.output);
@@ -245,13 +255,18 @@ app.post('/x402/echo', async (c) => {
   }
   
   try {
-    const body = await c.req.json();
-    const { text } = body;
+    let body = {};
+    try {
+      body = await c.req.json() || {};
+    } catch (e) {
+      // Handle case where no JSON body is provided
+      body = {};
+    }
     
     const { handleEcho } = await import("./handlers/echo.js");
     
     const result = await handleEcho({ 
-      input: { text } 
+      input: body 
     });
     
     return c.json(result.output);

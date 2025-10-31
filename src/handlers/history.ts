@@ -3,15 +3,19 @@ import { storageService } from "../services/storage.js";
 import { blockchainProvider } from "../providers/blockchain.js";
 
 export const historyInputSchema = z.object({
-  pool_id: z.string().describe("Pool identifier to get history for"),
-  limit: z.number().optional().default(10).describe("Number of historical entries to return"),
+  pool_id: z.string().optional().default("compound_v3:base:0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf").describe("Pool identifier to get history for (defaults to Compound V3 USDC on Base)"),
+  limit: z.number().optional().default(5).describe("Number of historical entries to return"),
 }) as any;
 
 export async function handleGetHistory({ input }: { input: any }) {
-  const { pool_id, limit } = input;
+  // Provide sensible defaults for x402scan users who can't input parameters
+  const { 
+    pool_id = "compound_v3:base:0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf", // Default to Compound V3 USDC on Base
+    limit = 5 
+  } = input || {};
   
-  if (!pool_id || typeof pool_id !== 'string') {
-    throw new Error("pool_id must be a non-empty string");
+  if (pool_id && typeof pool_id !== 'string') {
+    throw new Error("pool_id must be a string");
   }
   
   const history = storageService.getHistory(pool_id);

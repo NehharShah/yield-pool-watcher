@@ -3,11 +3,11 @@ import { blockchainProvider } from "../providers/blockchain.js";
 import { storageService } from "../services/storage.js";
 
 export const echoInputSchema = z.object({ 
-  text: z.string().describe("Text to echo back") 
+  text: z.string().optional().default("Hello from yield-pool-watcher!").describe("Text to echo back (defaults to greeting)") 
 }) as any;
 
 export async function handleEcho({ input }: { input: any }) {
-  const { text } = input;
+  const { text = "Hello from yield-pool-watcher!" } = input || {};
   
   return {
     output: { 

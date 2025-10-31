@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { ThresholdRules } from "../types/index.js";
-import { ProtocolId, SUPPORTED_PROTOCOLS } from "../config/protocols.js";
+import { SUPPORTED_PROTOCOLS } from "../config/protocols.js";
 import { NetworkId, NETWORKS, validateNetworkId } from "../config/networks.js";
 import { monitoringService } from "../services/monitoring.js";
 import { alertService } from "../services/alerts.js";
@@ -8,25 +7,32 @@ import { storageService } from "../services/storage.js";
 import { blockchainProvider } from "../providers/blockchain.js";
 
 export const monitorInputSchema = z.object({
-  network: z.string().optional().default("ethereum").describe("Blockchain network to monitor"),
-  protocol_ids: z.array(z.enum(SUPPORTED_PROTOCOLS)).describe("DeFi protocols to monitor"),
+  network: z.string().optional().default("base").describe("Blockchain network to monitor (defaults to Base)"),
+  protocol_ids: z.array(z.enum(SUPPORTED_PROTOCOLS)).optional().default(["compound_v3"]).describe("DeFi protocols to monitor (defaults to Compound V3)"),
   pools: z.array(z.string()).optional().default([]).describe("Pool addresses to watch (leave empty for default pools)"),
   threshold_rules: z.object({
     apy_spike_percent: z.number().optional().describe("Alert if APY increases by this percentage"),
     apy_drop_percent: z.number().optional().describe("Alert if APY decreases by this percentage"),
     tvl_drain_percent: z.number().optional().describe("Alert if TVL decreases by this percentage"),
     tvl_surge_percent: z.number().optional().describe("Alert if TVL increases by this percentage"),
-  }).describe("Alert threshold configuration"),
+  }).optional().default({
+    apy_spike_percent: 10,
+    tvl_drain_percent: 20
+  }).describe("Alert threshold configuration (defaults to 10% APY spike, 20% TVL drain)"),
 }) as any;
 
 export async function handleMonitor({ input }: { input: any }) {
   try {
-    const { network, protocol_ids, pools, threshold_rules } = input as {
-      network: string;
-      protocol_ids: ProtocolId[];
-      pools: string[];
-      threshold_rules: ThresholdRules;
-    };
+    // Provide sensible defaults for x402scan users who can't input parameters
+    const { 
+      network = "base",
+      protocol_ids = ["compound_v3"], 
+      pools = [], 
+      threshold_rules = {
+        apy_spike_percent: 10,
+        tvl_drain_percent: 20
+      }
+    } = input || {};
     
     // Validate network
     if (!validateNetworkId(network)) {
@@ -42,7 +48,7 @@ export async function handleMonitor({ input }: { input: any }) {
       await blockchainProvider.switchNetwork(networkId);
     }
     
-    // Validate inputs
+    // Validate inputs with defaults
     if (!Array.isArray(protocol_ids) || protocol_ids.length === 0) {
       throw new Error("protocol_ids must be a non-empty array");
     }
