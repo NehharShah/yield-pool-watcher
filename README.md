@@ -35,50 +35,85 @@ Agent runs on `http://localhost:3000`
 ## Test It Locally
 
 ```bash
-# Health check
+# Health check (works with no parameters - uses default greeting)
+curl -X POST http://localhost:3000/entrypoints/echo/invoke \
+  -H "Content-Type: application/json" \
+  -d '{"input":{}}'
+
+# OR with custom text
 curl -X POST http://localhost:3000/entrypoints/echo/invoke \
   -H "Content-Type: application/json" \
   -d '{"input":{"text":"Working!"}}'
 
-# Monitor Base Compound V3 
+# Monitor (works with no parameters - defaults to Base + Compound V3)
+curl -X POST http://localhost:3000/entrypoints/monitor/invoke \
+  -H "Content-Type: application/json" \
+  -d '{"input":{}}'
+
+# OR with custom parameters  
 curl -X POST http://localhost:3000/entrypoints/monitor/invoke \
   -H "Content-Type: application/json" \
   -d '{
     "input": {
-      "network": "base",
-      "protocol_ids": ["compound_v3"],
-      "threshold_rules": {"apy_spike_percent": 10, "tvl_drain_percent": 15}
+      "network": "ethereum",
+      "protocol_ids": ["aave_v3"],
+      "threshold_rules": {"apy_spike_percent": 5}
     }
   }'
 
-# Get historical data
+# Get history (works with no parameters - defaults to Compound V3 USDC on Base)
+curl -X POST http://localhost:3000/entrypoints/get_history/invoke \
+  -H "Content-Type: application/json" \
+  -d '{"input":{}}'
+
+# OR with specific pool
 curl -X POST http://localhost:3000/entrypoints/get_history/invoke \
   -H "Content-Type: application/json" \
   -d '{
     "input": {
-      "pool_id": "compound_v3:base:0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf",
-      "limit": 5
+      "pool_id": "aave_v3:ethereum:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "limit": 10
     }
   }'
 ```
 
 ## x402 Usage (Live Production)
 
+**Perfect for x402scan users - no parameters needed!** ✅ FIXED
+
+**All endpoints now work with empty `{}` request bodies!**
+
 ```bash
-# Production endpoint (requires x402 payment)
+# Just pay and get results! (uses smart defaults)
+curl -X POST https://yield-pool-watcher.vercel.app/x402/echo \
+  -H "Content-Type: application/json" \
+  -H "X-PAYMENT: <payment_header>" \
+  -d '{}'
+
+curl -X POST https://yield-pool-watcher.vercel.app/x402/monitor \
+  -H "Content-Type: application/json" \
+  -H "X-PAYMENT: <payment_header>" \
+  -d '{}'
+
+curl -X POST https://yield-pool-watcher.vercel.app/x402/get_history \
+  -H "Content-Type: application/json" \
+  -H "X-PAYMENT: <payment_header>" \
+  -d '{}'
+
+# OR customize parameters if you want specific behavior
 curl -X POST https://yield-pool-watcher.vercel.app/x402/monitor \
   -H "Content-Type: application/json" \
   -H "X-PAYMENT: <payment_header>" \
   -d '{
-    "network": "base",
-    "protocol_ids": ["compound_v3"],
-    "threshold_rules": {"apy_spike_percent": 5}
+    "network": "ethereum",
+    "protocol_ids": ["aave_v3"],
+    "threshold_rules": {"apy_spike_percent": 2}
   }'
 
 # Without payment header (returns 402 with pricing info)
 curl -X POST https://yield-pool-watcher.vercel.app/x402/monitor \
   -H "Content-Type: application/json" \
-  -d '{"network":"base","protocol_ids":["compound_v3"],"threshold_rules":{}}'
+  -d '{}'
 ```
 
 ## Multi-Chain Examples
@@ -94,12 +129,23 @@ curl -X POST https://yield-pool-watcher.vercel.app/x402/monitor \
 {"network": "base", "protocol_ids": ["aave_v3", "compound_v3"], "threshold_rules": {"apy_drop_percent": 5}}
 ```
 
+## Smart Defaults (Perfect for x402scan!)
+
+All endpoints work with **zero parameters** using intelligent defaults:
+
+- **📞 Echo**: Default greeting message with system status
+- **📊 Monitor**: Base network + Compound V3 + 10% APY alerts  
+- **📈 History**: Compound V3 USDC pool on Base (last 5 entries)
+
+**Users can just pay via x402scan and get instant results!**
+
 ## Features
 
 ✅ **Within 1 block detection** - Real-time monitoring  
 ✅ **Direct Aave V3 & Compound V3** - No aggregated APIs  
 ✅ **Smart alerts** - APY/TVL threshold breaches  
 ✅ **Production ready** - Full error handling  
+✅ **x402scan compatible** - Zero-config payments  
 
 
 ## Pool Addresses

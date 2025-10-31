@@ -8,42 +8,45 @@ import { z } from "zod";
 export const { app, addEntrypoint } = createAgentApp({
   name: "yield-pool-watcher",
   version: "0.1.0",
-  description: "Track APY and TVL across pools and alert on changes",
+  description: "Track APY and TVL across pools and alert on changes. Zero-config defaults perfect for x402scan payments.",
 }, {
-  payments: {
+  payments: process.env.NODE_ENV === 'production' ? {
     defaultPrice: "0.005",
     facilitatorUrl: ENV.FACILITATOR_URL,
     payTo: ENV.ADDRESS || "0x742d35Cc6634C0532925a3b8D486Ee7a51d8D7B9",
     network: ENV.NETWORK
-  },
-  useConfigPayments: true
+  } : false,
+  useConfigPayments: process.env.NODE_ENV === 'production'
 });
 
 // Create detailed schemas for documentation and x402scan compatibility
 const monitorSchema = z.object({
-  network: z.string().optional().default("ethereum").describe("Blockchain network to monitor (ethereum, base, polygon, arbitrum, optimism, avalanche, bnb, solana)"),
-  protocol_ids: z.array(z.enum(["aave_v3", "compound_v3"])).describe("DeFi protocols to monitor"),
+  network: z.string().optional().default("base").describe("Blockchain network to monitor (ethereum, base, polygon, arbitrum, optimism, avalanche, bnb, solana)"),
+  protocol_ids: z.array(z.enum(["aave_v3", "compound_v3"])).optional().default(["compound_v3"]).describe("DeFi protocols to monitor"),
   pools: z.array(z.string()).optional().default([]).describe("Pool addresses to watch (leave empty for default pools)"),
   threshold_rules: z.object({
     apy_spike_percent: z.number().optional().describe("Alert if APY increases by this percentage"),
     apy_drop_percent: z.number().optional().describe("Alert if APY decreases by this percentage"),
     tvl_drain_percent: z.number().optional().describe("Alert if TVL decreases by this percentage"),
     tvl_surge_percent: z.number().optional().describe("Alert if TVL increases by this percentage"),
+  }).optional().default({
+    apy_spike_percent: 10,
+    tvl_drain_percent: 20
   }).describe("Alert threshold configuration"),
 }).describe("Monitor DeFi pool metrics across networks");
 
 const historySchema = z.object({
-  pool_id: z.string().describe("Pool identifier (format: protocol:network:address)"),
-  limit: z.number().optional().default(10).describe("Number of historical entries to return (1-100)"),
+  pool_id: z.string().optional().default("compound_v3:base:0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf").describe("Pool identifier (format: protocol:network:address)"),
+  limit: z.number().optional().default(5).describe("Number of historical entries to return (1-100)"),
 }).describe("Get historical pool data");
 
 const echoSchema = z.object({
-  text: z.string().describe("Text to echo back")
+  text: z.string().optional().default("Hello from yield-pool-watcher!").describe("Text to echo back")
 }).describe("Health check with system status");
 
 addEntrypoint({
   key: "monitor",
-  description: "Monitor DeFi pool metrics (APY, TVL) across multiple networks with block-level precision and configurable alert thresholds. Returns real-time data, change deltas, and triggered alerts.",
+  description: "Monitor DeFi pool metrics (APY, TVL) across multiple networks with block-level precision and configurable alert thresholds. Returns real-time data, change deltas, and triggered alerts. Works with zero parameters (defaults to Base + Compound V3).",
   price: "0.002",
   input: monitorSchema as any,
   handler: handleMonitor
@@ -51,7 +54,7 @@ addEntrypoint({
 
 addEntrypoint({
   key: "get_history", 
-  description: "Retrieve historical APY and TVL metrics for a specific pool, with configurable limit. Useful for tracking trends and analyzing pool performance over time.",
+  description: "Retrieve historical APY and TVL metrics for a specific pool, with configurable limit. Useful for tracking trends and analyzing pool performance over time. Works with zero parameters (defaults to Compound V3 USDC on Base).",
   price: "0.001",
   input: historySchema as any,
   handler: handleGetHistory
@@ -59,7 +62,7 @@ addEntrypoint({
 
 addEntrypoint({
   key: "echo",
-  description: "Health check endpoint that echoes input text and provides system status including RPC connectivity, current block number, monitored pools count, and server uptime.",
+  description: "Health check endpoint that echoes input text and provides system status including RPC connectivity, current block number, monitored pools count, and server uptime. Works with zero parameters (uses default greeting).",
   input: echoSchema as any,
   handler: handleEcho
 });
