@@ -62,7 +62,7 @@ const echoSchema = z.object({
 addEntrypoint({
   key: "monitor",
   description: "Monitor DeFi pool metrics (APY, TVL) across multiple networks with block-level precision and configurable alert thresholds. Returns real-time data, change deltas, and triggered alerts. Works with zero parameters (defaults to Base + Compound V3).",
-  price: "0.002",
+  price: "0.001",
   input: monitorSchema as any,
   handler: handleMonitor
 });
@@ -78,6 +78,7 @@ addEntrypoint({
 addEntrypoint({
   key: "echo",
   description: "Health check endpoint that echoes input text and provides system status including RPC connectivity, current block number, monitored pools count, and server uptime. Works with zero parameters (uses default greeting).",
+  price: "0.001",
   input: echoSchema as any,
   handler: handleEcho
 });
