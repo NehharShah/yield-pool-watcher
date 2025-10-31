@@ -21,10 +21,13 @@ export class CompoundProvider {
         
         const contract = new ethers.Contract(poolAddress, COMPOUND_COMET_ABI, provider);
         
+        // Add detailed logging for debugging
+        console.log(`🔍 Fetching Compound V3 data for ${poolAddress} on ${networkId}`);
+        
         const [totalSupply, totalBorrow, decimals] = await Promise.all([
-          contract.totalSupply(),
-          contract.totalBorrow(),
-          contract.decimals()
+          contract.totalSupply().catch(e => { throw new Error(`totalSupply failed: ${e.message}`); }),
+          contract.totalBorrow().catch(e => { throw new Error(`totalBorrow failed: ${e.message}`); }),
+          contract.decimals().catch(e => { throw new Error(`decimals failed: ${e.message}`); })
         ]);
         
         const decimalsBN = BigInt(10) ** BigInt(decimals);

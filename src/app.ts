@@ -3,6 +3,7 @@ import { ENV } from "./config/env.js";
 import { handleMonitor } from "./handlers/monitor.js";
 import { handleGetHistory } from "./handlers/history.js";
 import { handleEcho } from "./handlers/echo.js";
+import { blockchainProvider } from "./providers/blockchain.js";
 import { z } from "zod";
 
 export const { app, addEntrypoint } = createAgentApp({
@@ -13,10 +14,39 @@ export const { app, addEntrypoint } = createAgentApp({
   payments: process.env.NODE_ENV === 'production' ? {
     defaultPrice: "0.005",
     facilitatorUrl: ENV.FACILITATOR_URL,
-    payTo: ENV.ADDRESS || "0x742d35Cc6634C0532925a3b8D486Ee7a51d8D7B9",
+    payTo: ENV.ADDRESS || "0x7e296A887F7Bd9827D911f01D61ACe27DE542F87",
     network: ENV.NETWORK
   } : false,
   useConfigPayments: process.env.NODE_ENV === 'production'
+});
+
+// Initialize blockchain provider for both local and production
+const initializeBlockchain = async () => {
+  try {
+    await blockchainProvider.initialize();
+    console.log(`✅ Blockchain provider initialized successfully`);
+  } catch (error) {
+    console.error(`❌ Failed to initialize blockchain provider:`, error);
+  }
+};
+
+// Initialize immediately (non-blocking)
+initializeBlockchain();
+
+// Add a simple health check endpoint for debugging
+app.get('/health', (c) => {
+  return c.json({
+    status: 'ok',
+    rpc_connected: blockchainProvider.isInitialized(),
+    current_block: blockchainProvider.getCurrentBlock(),
+    active_network: blockchainProvider.getActiveNetwork(),
+    env_check: {
+      has_rpc_url: !!process.env.RPC_URL,
+      node_env: process.env.NODE_ENV,
+      rpc_preview: process.env.RPC_URL?.substring(0, 50) + '...'
+    },
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Create detailed schemas for documentation and x402scan compatibility

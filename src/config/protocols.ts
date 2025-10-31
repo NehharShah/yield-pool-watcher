@@ -74,7 +74,7 @@ export const PROTOCOL_ADDRESSES: Record<string, Partial<Record<NetworkId, Partia
     },
     "base": {
       name: "Compound V3",
-      comet: "0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf", // USDC market
+      comet: "0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf", 
       supportedNetworks: ["base"]
     }
   }
