@@ -33,21 +33,6 @@ const initializeBlockchain = async () => {
 // Initialize immediately (non-blocking)
 initializeBlockchain();
 
-// Add a simple health check endpoint for debugging
-app.get('/health', (c) => {
-  return c.json({
-    status: 'ok',
-    rpc_connected: blockchainProvider.isInitialized(),
-    current_block: blockchainProvider.getCurrentBlock(),
-    active_network: blockchainProvider.getActiveNetwork(),
-    env_check: {
-      has_rpc_url: !!process.env.RPC_URL,
-      node_env: process.env.NODE_ENV,
-      rpc_preview: process.env.RPC_URL?.substring(0, 50) + '...'
-    },
-    timestamp: new Date().toISOString()
-  });
-});
 
 // Create detailed schemas for documentation and x402scan compatibility
 const monitorSchema = z.object({
