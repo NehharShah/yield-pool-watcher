@@ -3,6 +3,7 @@ import { ENV } from "./config/env.js";
 import { handleMonitor } from "./handlers/monitor.js";
 import { handleGetHistory } from "./handlers/history.js";
 import { handleEcho } from "./handlers/echo.js";
+import { handleUniversalMonitor, universalMonitorSchema } from "./handlers/universal-monitor.js";
 import { blockchainProvider } from "./providers/blockchain.js";
 import { z } from "zod";
 
@@ -23,10 +24,21 @@ export const { app, addEntrypoint } = createAgentApp({
 // Initialize blockchain provider for both local and production
 const initializeBlockchain = async () => {
   try {
-    await blockchainProvider.initialize();
-    console.log(`✅ Blockchain provider initialized successfully`);
+    // Initialize all supported networks for Universal Monitor
+    const supportedNetworks = ["base", "ethereum", "polygon", "arbitrum", "optimism"];
+    console.log(`🌐 Initializing ${supportedNetworks.length} networks for Universal Monitor...`);
+    
+    for (const network of supportedNetworks) {
+      try {
+        await blockchainProvider.initialize(network as any);
+      } catch (error) {
+        console.warn(`⚠️ Failed to initialize ${network}:`, error instanceof Error ? error.message : error);
+      }
+    }
+    
+    console.log(`🚀 Universal DeFi Monitor ready across ${supportedNetworks.length} networks`);
   } catch (error) {
-    console.error(`❌ Failed to initialize blockchain provider:`, error);
+    console.error(`❌ Failed to initialize blockchain providers:`, error);
   }
 };
 
@@ -81,6 +93,15 @@ addEntrypoint({
   price: "0.001",
   input: echoSchema as any,
   handler: handleEcho
+});
+
+// NEW: Universal DeFi Pool Monitor - Premium endpoint
+addEntrypoint({
+  key: "universal_monitor",
+  description: "🚀 Universal DeFi Pool Monitor - Track APY, TVL, and yields across ALL major protocols (Aave V3, Compound V3) on multiple networks (Ethereum, Base, Polygon, Arbitrum, Optimism) with real-time alerts, historical data, and comprehensive analytics. Perfect for DeFi applications and yield farming strategies.",
+  price: "0.01", // Premium pricing for comprehensive multi-network data
+  input: universalMonitorSchema,
+  handler: handleUniversalMonitor
 });
 
 // Add x402scan-compatible endpoint for get_history with proper schema
@@ -292,6 +313,94 @@ app.post('/x402/echo', async (c) => {
   } catch (error) {
     return c.json({ error: "Internal server error" }, 500);
   }
+        });
+
+// Add x402scan-compatible endpoint for universal_monitor with proper schema
+app.post('/x402/universal_monitor', async (c) => {
+  const paymentHeader = c.req.header('X-PAYMENT');
+  
+  if (!paymentHeader) {
+    return c.json({
+      x402Version: 1,
+      error: "X-PAYMENT header is required",
+      accepts: [{
+        scheme: "exact",
+        network: "base",
+        maxAmountRequired: "10000", // Higher amount for premium endpoint
+        resource: "https://yield-pool-watcher.vercel.app/x402/universal_monitor",
+        description: "🚀 Universal DeFi Pool Monitor - Track APY, TVL, and yields across ALL major protocols (Aave V3, Compound V3) on multiple networks (Ethereum, Base, Polygon, Arbitrum, Optimism) with real-time alerts, historical data, and comprehensive analytics. Perfect for DeFi applications and yield farming strategies.",
+        mimeType: "application/json",
+        payTo: "0x7e296A887F7Bd9827D911f01D61ACe27DE542F87",
+        maxTimeoutSeconds: 300,
+        asset: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        outputSchema: {
+          input: {
+            type: "http",
+            method: "POST",
+            bodyType: "json",
+            bodyFields: {
+              protocols: {
+                type: "array",
+                required: false,
+                description: "DeFi protocols to monitor (aave_v3, compound_v3)"
+              },
+              networks: {
+                type: "array", 
+                required: false,
+                description: "Blockchain networks to monitor (ethereum, base, polygon, arbitrum, optimism)"
+              },
+              assets: {
+                type: "array",
+                required: false,
+                description: "Specific asset addresses to monitor (leave empty for default assets)"
+              },
+              include_historical: {
+                type: "boolean",
+                required: false,
+                description: "Include historical data in response"
+              },
+              include_predictions: {
+                type: "boolean",
+                required: false,
+                description: "Include yield predictions (future feature)"
+              },
+              threshold_rules: {
+                type: "object",
+                required: false,
+                description: "Alert threshold configuration with apy_spike_percent, apy_drop_percent, tvl_drain_percent, tvl_surge_percent"
+              }
+            }
+          }
+        },
+        extra: {
+          name: "USD Coin",
+          version: "2"
+        }
+      }],
+      payer: "0x7e296A887F7Bd9827D911f01D61ACe27DE542F87"
+    }, 402);
+  }
+  
+  try {
+    let body = {};
+    try {
+      body = await c.req.json() || {};
+    } catch (e) {
+      // Handle case where no JSON body is provided
+      body = {};
+    }
+    
+    const { handleUniversalMonitor } = await import("./handlers/universal-monitor.js");
+    
+    const result = await handleUniversalMonitor({ 
+      input: body 
+    });
+    
+    return c.json(result.output);
+  } catch (error) {
+    console.error("Universal Monitor x402 error:", error);
+    return c.json({ error: "Internal server error" }, 500);
+  }
 });
 
 // Add schema discovery endpoints for x402scan
@@ -376,7 +485,7 @@ app.get('/schema', (c) => {
         description: "Health check endpoint that echoes input text and provides system status including RPC connectivity, current block number, monitored pools count, and server uptime.",
         method: "POST",
         endpoint: "/entrypoints/echo/invoke",
-        price: "0.005",
+        price: "0.001",
         input_schema: {
           type: "object",
           properties: {
@@ -388,7 +497,64 @@ app.get('/schema', (c) => {
                   description: "Text to echo back"
                 }
               },
-              required: ["text"]
+              required: []
+            }
+          },
+          required: ["input"]
+        }
+      },
+      universal_monitor: {
+        description: "🚀 Universal DeFi Pool Monitor - Track APY, TVL, and yields across ALL major protocols (Aave V3, Compound V3) on multiple networks (Ethereum, Base, Polygon, Arbitrum, Optimism) with real-time alerts, historical data, and comprehensive analytics. Perfect for DeFi applications and yield farming strategies.",
+        method: "POST",
+        endpoint: "/entrypoints/universal_monitor/invoke",
+        price: "0.01", // Premium pricing
+        input_schema: {
+          type: "object",
+          properties: {
+            input: {
+              type: "object",
+              properties: {
+                protocols: {
+                  type: "array",
+                  items: { enum: ["aave_v3", "compound_v3"] },
+                  default: ["aave_v3", "compound_v3"],
+                  description: "DeFi protocols to monitor"
+                },
+                networks: {
+                  type: "array",
+                  items: { type: "string" },
+                  default: ["base", "ethereum"],
+                  description: "Blockchain networks to monitor (ethereum, base, polygon, arbitrum, optimism)"
+                },
+                assets: {
+                  type: "array",
+                  items: { type: "string" },
+                  default: [],
+                  description: "Specific asset addresses to monitor (leave empty for default assets)"
+                },
+                include_historical: {
+                  type: "boolean",
+                  default: false,
+                  description: "Include historical data in response"
+                },
+                include_predictions: {
+                  type: "boolean",
+                  default: false,
+                  description: "Include yield predictions (future feature)"
+                },
+                threshold_rules: {
+                  type: "object",
+                  properties: {
+                    apy_spike_percent: { type: "number", description: "Alert if APY increases by this percentage" },
+                    apy_drop_percent: { type: "number", description: "Alert if APY decreases by this percentage" },
+                    tvl_drain_percent: { type: "number", description: "Alert if TVL decreases by this percentage" },
+                    tvl_surge_percent: { type: "number", description: "Alert if TVL increases by this percentage" }
+                  },
+                  default: {},
+                  description: "Alert threshold configuration"
+                }
+              },
+              required: []
             }
           },
           required: ["input"]
@@ -483,7 +649,65 @@ app.get('/openapi.json', (c) => {
                       properties: {
                         text: { type: "string", description: "Text to echo back" }
                       },
-                      required: ["text"]
+                      required: []
+                    }
+                  },
+                  required: ["input"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "/entrypoints/universal_monitor/invoke": {
+        post: {
+          summary: "Universal DeFi Pool Monitor",
+          description: "🚀 Universal DeFi Pool Monitor - Track APY, TVL, and yields across ALL major protocols (Aave V3, Compound V3) on multiple networks (Ethereum, Base, Polygon, Arbitrum, Optimism) with real-time alerts, historical data, and comprehensive analytics. Perfect for DeFi applications and yield farming strategies.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    input: {
+                      type: "object",
+                      properties: {
+                        protocols: { 
+                          type: "array", 
+                          items: { enum: ["aave_v3", "compound_v3"] },
+                          default: ["aave_v3", "compound_v3"],
+                          description: "DeFi protocols to monitor"
+                        },
+                        networks: { 
+                          type: "array", 
+                          items: { type: "string" },
+                          default: ["base", "ethereum"],
+                          description: "Blockchain networks to monitor"
+                        },
+                        assets: { 
+                          type: "array", 
+                          items: { type: "string" },
+                          default: [],
+                          description: "Specific asset addresses to monitor"
+                        },
+                        include_historical: { 
+                          type: "boolean", 
+                          default: false,
+                          description: "Include historical data"
+                        },
+                        include_predictions: { 
+                          type: "boolean", 
+                          default: false,
+                          description: "Include yield predictions"
+                        },
+                        threshold_rules: { 
+                          type: "object",
+                          default: {},
+                          description: "Alert threshold configuration"
+                        }
+                      },
+                      required: []
                     }
                   },
                   required: ["input"]

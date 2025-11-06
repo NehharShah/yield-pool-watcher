@@ -15,10 +15,20 @@ export const ERC20_ABI = [
   "function decimals() external view returns (uint8)"
 ];
 
+export const MORPHO_VAULT_ABI = [
+  "function totalAssets() external view returns (uint256)",
+  "function totalSupply() external view returns (uint256)", 
+  "function asset() external view returns (address)",
+  "function name() external view returns (string)",
+  "function symbol() external view returns (string)",
+  "function decimals() external view returns (uint8)"
+];
+
 export interface ProtocolConfig {
   name: string;
   poolDataProvider?: string;
   comet?: string;
+  morpho?: string;
   supportedNetworks: NetworkId[];
 }
 
@@ -27,12 +37,12 @@ export const PROTOCOL_ADDRESSES: Record<string, Partial<Record<NetworkId, Partia
   aave_v3: {
     "ethereum": {
       name: "Aave V3",
-      poolDataProvider: "0x7B4EB56E7CD4b454BA8ff71E4518426369a138a3",
+      poolDataProvider: "0x0a16f2FCC0D44FaE41cc54e079281D84A363bECD", // Official Aave V3 AaveProtocolDataProvider
       supportedNetworks: ["ethereum"]
     },
     "polygon": {
       name: "Aave V3",
-      poolDataProvider: "0x69FA688f1Dc47d4B5d8029D5a35FB7a548310654",
+      poolDataProvider: "0x243Aa95cAC2a25651eda86e80bEe66114413c43b", // Official Aave V3 AaveProtocolDataProvider
       supportedNetworks: ["polygon"]
     },
     "avalanche": {
@@ -42,17 +52,17 @@ export const PROTOCOL_ADDRESSES: Record<string, Partial<Record<NetworkId, Partia
     },
     "arbitrum": {
       name: "Aave V3",
-      poolDataProvider: "0x69FA688f1Dc47d4B5d8029D5a35FB7a548310654",
+      poolDataProvider: "0x243Aa95cAC2a25651eda86e80bEe66114413c43b", // Official Aave V3 AaveProtocolDataProvider
       supportedNetworks: ["arbitrum"]
     },
     "optimism": {
       name: "Aave V3",
-      poolDataProvider: "0x69FA688f1Dc47d4B5d8029D5a35FB7a548310654",
+      poolDataProvider: "0x243Aa95cAC2a25651eda86e80bEe66114413c43b", // Official Aave V3 AaveProtocolDataProvider (same as Arbitrum/Polygon)
       supportedNetworks: ["optimism"]
     },
     "base": {
       name: "Aave V3",
-      poolDataProvider: "0x2d8A3C5677189723C4cB8873CfC9C8976FDF38Ac",
+      poolDataProvider: "0x2d8A3C5677189723C4cB8873CfC9C8976FDF38Ac", // Base Mainnet
       supportedNetworks: ["base"]
     }
   },
@@ -74,7 +84,24 @@ export const PROTOCOL_ADDRESSES: Record<string, Partial<Record<NetworkId, Partia
     },
     "base": {
       name: "Compound V3",
-      comet: "0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf", 
+      comet: "0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf", // USDC market
+      supportedNetworks: ["base"]
+    },
+    "optimism": {
+      name: "Compound V3",
+      comet: "0x2e44e174f7D53F0212823acC11C01A11d58c5bCB", // USDC market
+      supportedNetworks: ["optimism"]
+    }
+  },
+  morpho: {
+    "ethereum": {
+      name: "Morpho Blue",
+      morpho: "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb", // Official Morpho Blue core contract
+      supportedNetworks: ["ethereum"]
+    },
+    "base": {
+      name: "Morpho Blue", 
+      morpho: "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb", // Official Morpho Blue core contract
       supportedNetworks: ["base"]
     }
   }
@@ -103,5 +130,5 @@ export function isProtocolSupported(protocolId: string, networkId: NetworkId): b
   }
 }
 
-export const SUPPORTED_PROTOCOLS = ["aave_v3", "compound_v3"] as const;
+export const SUPPORTED_PROTOCOLS = ["aave_v3", "compound_v3", "morpho"] as const;
 export type ProtocolId = typeof SUPPORTED_PROTOCOLS[number];

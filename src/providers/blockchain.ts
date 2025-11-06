@@ -27,8 +27,6 @@ class BlockchainProvider {
     const networkConfig = getNetwork(network);
     const rpcUrl = networkConfig.rpcUrl;
     
-    console.log(`🔗 Connecting to ${networkConfig.name}: ${rpcUrl.substring(0, 50)}...`);
-    
     const provider = new ethers.JsonRpcProvider(rpcUrl);
     
     // Test connection and get block number
@@ -38,21 +36,20 @@ class BlockchainProvider {
     this.currentBlocks.set(network, currentBlock);
     this.activeNetwork = network;
     
-    console.log(`📦 ${networkConfig.name} current block: ${currentBlock}`);
+    console.log(`✅ ${networkConfig.name} ready (block: ${currentBlock})`);
     
     this.startBlockMonitoring(network);
   }
 
   private startBlockMonitoring(networkId: NetworkId): void {
     const provider = this.providers.get(networkId);
-    const networkConfig = getNetwork(networkId);
     
     if (!provider) return;
 
-    // Monitor new blocks
+    // Monitor new blocks (silent monitoring)
     provider.on("block", (blockNumber: number) => {
       this.currentBlocks.set(networkId, blockNumber);
-      console.log(`📦 ${networkConfig.name} new block: ${blockNumber}`);
+      // Silent block monitoring - only log on significant events
     });
   }
 
