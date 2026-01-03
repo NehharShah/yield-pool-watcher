@@ -21,7 +21,7 @@ export const NETWORKS: Record<NetworkId, NetworkConfig> = {
   "ethereum": {
     name: "Ethereum Mainnet",
     chainId: 1,
-    rpcUrl: process.env.RPC_URL || process.env.ETHEREUM_RPC_URL || `https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY`,
+    rpcUrl: process.env.ETHEREUM_RPC_URL || process.env.RPC_URL || `https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY`,
     nativeCurrency: "ETH",
     explorer: "https://etherscan.io"
   },
@@ -37,7 +37,7 @@ export const NETWORKS: Record<NetworkId, NetworkConfig> = {
   "base": {
     name: "Base Mainnet",
     chainId: 8453,
-    rpcUrl: process.env.RPC_URL || process.env.BASE_RPC_URL || `https://base-mainnet.g.alchemy.com/v2/YOUR_API_KEY`,
+    rpcUrl: process.env.BASE_RPC_URL || process.env.RPC_URL || `https://base-mainnet.g.alchemy.com/v2/YOUR_API_KEY`,
     nativeCurrency: "ETH",
     explorer: "https://basescan.org"
   },
@@ -53,7 +53,7 @@ export const NETWORKS: Record<NetworkId, NetworkConfig> = {
   "optimism": {
     name: "OP Mainnet",
     chainId: 10,
-    rpcUrl: process.env.RPC_URL || process.env.OPTIMISM_RPC_URL || `https://opt-mainnet.g.alchemy.com/v2/YOUR_API_KEY`,
+    rpcUrl: process.env.OPTIMISM_RPC_URL || process.env.RPC_URL || `https://opt-mainnet.g.alchemy.com/v2/YOUR_API_KEY`,
     nativeCurrency: "ETH",
     explorer: "https://optimistic.etherscan.io"
   },
@@ -69,7 +69,7 @@ export const NETWORKS: Record<NetworkId, NetworkConfig> = {
   "polygon": {
     name: "Polygon Mainnet",
     chainId: 137,
-    rpcUrl: process.env.RPC_URL || process.env.POLYGON_RPC_URL || `https://polygon-mainnet.g.alchemy.com/v2/YOUR_API_KEY`,
+    rpcUrl: process.env.POLYGON_RPC_URL || process.env.RPC_URL || `https://polygon-mainnet.g.alchemy.com/v2/YOUR_API_KEY`,
     nativeCurrency: "MATIC",
     explorer: "https://polygonscan.com"
   },
@@ -85,7 +85,7 @@ export const NETWORKS: Record<NetworkId, NetworkConfig> = {
   "arbitrum": {
     name: "Arbitrum One",
     chainId: 42161,
-    rpcUrl: process.env.RPC_URL || process.env.ARBITRUM_RPC_URL || `https://arb-mainnet.g.alchemy.com/v2/YOUR_API_KEY`,
+    rpcUrl: process.env.ARBITRUM_RPC_URL || process.env.RPC_URL || `https://arb-mainnet.g.alchemy.com/v2/YOUR_API_KEY`,
     nativeCurrency: "ETH",
     explorer: "https://arbiscan.io"
   },
